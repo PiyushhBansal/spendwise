@@ -1,0 +1,17 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "spendwise.backend" . }}
+  labels:
+    release: {{ .Values.monitoring.serviceMonitor.releaseLabel }}
+    {{- include "spendwise.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "spendwise.backend" . }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+{{- end }}

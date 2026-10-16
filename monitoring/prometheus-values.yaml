@@ -1,0 +1,33 @@
+# Values for prometheus-community/kube-prometheus-stack (Prometheus + Grafana + Operator)
+# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f monitoring/prometheus-values.yaml
+
+prometheus:
+  prometheusSpec:
+    # Only pick up ServiceMonitors labelled release=kube-prometheus-stack
+    serviceMonitorSelectorNilUsesHelmValues: true
+    retention: 3d
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+
+grafana:
+  adminUser: admin
+  # Demo default — override: --set grafana.adminPassword=...
+  adminPassword: spendwise-admin
+  service:
+    type: ClusterIP
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+
+alertmanager:
+  enabled: false
+
+# EKS manages these control-plane components; scraping them only produces DOWN targets
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
