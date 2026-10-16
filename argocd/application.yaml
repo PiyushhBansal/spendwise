@@ -1,0 +1,25 @@
+# ArgoCD watches helm/spendwise on main. When CI commits a new image SHA into
+# values.yaml, ArgoCD detects the drift and rolls the new images out automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spendwise
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/PiyushhBansal/spendwise.git
+    targetRevision: main
+    path: helm/spendwise
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spendwise
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
