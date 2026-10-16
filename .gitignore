@@ -26,3 +26,6 @@ crash.log
 .DS_Store
 .idea/
 .vscode/
+
+# kubeconfig written by the kind provider (contains cluster credentials)
+terraform/local/*-config
