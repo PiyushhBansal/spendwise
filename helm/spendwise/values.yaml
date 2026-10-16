@@ -1,0 +1,55 @@
+# NOTE: the CI "deploy" job rewrites every `repository: ghcr.io/<owner>/spendwise-*`
+# owner and every `tag:` line below with the commit SHA. ArgoCD then syncs the change.
+
+backend:
+  image:
+    repository: ghcr.io/piyushhbansal/spendwise-backend
+    tag: "latest"
+  replicaCount: 2
+  port: 8000
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 384Mi }
+
+frontend:
+  image:
+    repository: ghcr.io/piyushhbansal/spendwise-frontend
+    tag: "latest"
+  replicaCount: 2
+  port: 8080
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+
+# Set to [{name: ghcr-creds}] if your GHCR packages are private
+imagePullSecrets: []
+
+postgres:
+  image: postgres:16-alpine
+  database: spendwise
+  username: spendwise
+  # Demo default only — override with --set postgres.password=... or an external secret
+  password: change-me-in-prod
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: gp2
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""   # empty = match any host (use the ELB hostname directly)
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    # Must match the kube-prometheus-stack release name so Prometheus selects it
+    releaseLabel: kube-prometheus-stack
+  grafanaDashboard:
+    enabled: true

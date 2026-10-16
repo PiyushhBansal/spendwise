@@ -1,0 +1,24 @@
+{{- if .Values.hpa.enabled }}
+{{- range $component := list "backend" "frontend" }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "spendwise.name" $ }}-{{ $component }}
+  labels: {{- include "spendwise.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "spendwise.name" $ }}-{{ $component }}
+  minReplicas: {{ $.Values.hpa.minReplicas }}
+  maxReplicas: {{ $.Values.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $.Values.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,11 @@
+# Local cluster (kind / minikube / Docker Desktop) overrides
+postgres:
+  persistence:
+    enabled: false
+hpa:
+  enabled: false
+monitoring:
+  serviceMonitor:
+    enabled: false
+  grafanaDashboard:
+    enabled: false
