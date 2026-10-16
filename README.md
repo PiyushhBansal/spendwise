@@ -139,7 +139,7 @@ docker run -d --name sw-pg -p 5432:5432 -e POSTGRES_DB=spendwise -e POSTGRES_USE
 # Backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt     # runtime deps + pytest/httpx
 cp .env.example .env
 alembic upgrade head
 uvicorn app.main:app --reload            # http://localhost:8000
