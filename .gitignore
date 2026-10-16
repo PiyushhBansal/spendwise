@@ -29,3 +29,7 @@ crash.log
 
 # kubeconfig written by the kind provider (contains cluster credentials)
 terraform/local/*-config
+
+# Personal recording notes (kept locally, not part of the submission)
+demo/VIDEO_SCRIPT.md
+demo/NARRATION.md
