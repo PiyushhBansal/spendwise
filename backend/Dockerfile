@@ -1,18 +1,31 @@
-FROM python:3.12-slim AS base
+# ---- Stage 1: install dependencies into an isolated virtualenv ----
+FROM python:3.12-slim AS build
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt \
+    # build tooling is not needed at runtime (and pip vendors its own urllib3/msgpack)
+    && pip uninstall -y pip setuptools wheel
+
+# ---- Stage 2: minimal runtime image ----
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PATH="/opt/venv/bin:$PATH"
+
+# Patch OS packages, and drop the base image's own pip/setuptools so Trivy only sees what the app ships
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* \
+    && (python -m pip uninstall -y pip setuptools wheel || true) \
+    && rm -rf /usr/local/lib/python3.12/ensurepip
 
 WORKDIR /app
-
-# Patch OS packages so the Trivy gate doesn't trip on fixed base-image CVEs
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
-
+COPY --from=build /opt/venv /opt/venv
 COPY alembic.ini .
 COPY alembic ./alembic
 COPY app ./app
