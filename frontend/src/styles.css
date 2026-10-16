@@ -1,0 +1,97 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #1d2330;
+  --muted: #6b7280;
+  --border: #e3e6eb;
+  --primary: #0f766e;
+  --danger: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.container { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+header h1 { margin: 0; color: var(--primary); }
+header p { margin: 4px 0 20px; color: var(--muted); }
+h2 { font-size: 1.05rem; margin: 0 0 12px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+input, select, button {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+}
+button { cursor: pointer; }
+button:hover { background: #f0f2f5; }
+button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+button.primary:hover { filter: brightness(1.1); }
+button.danger { color: var(--danger); }
+
+.expense-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+.expense-form input[placeholder^="Note"] { grid-column: 1 / 4; }
+.form-actions { display: flex; gap: 8px; }
+.form-actions button { flex: 1; }
+
+.error { background: #fef3f2; color: var(--danger); border: 1px solid #fecdca; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+.muted { color: var(--muted); }
+
+.stats { display: flex; gap: 32px; margin-bottom: 14px; }
+.stats .label { display: block; color: var(--muted); font-size: 0.85rem; }
+.stats strong { font-size: 1.5rem; }
+.bars { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.bars li { display: grid; grid-template-columns: 110px 1fr 110px; align-items: center; gap: 10px; }
+.bar { background: #eef0f3; border-radius: 4px; height: 10px; overflow: hidden; }
+.bar div { background: var(--primary); height: 100%; }
+.bars .amount { text-align: right; }
+
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.list-header h2 { margin: 0; }
+.expenses { list-style: none; padding: 0; margin: 0; }
+.expenses li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.expenses li.editing { display: block; }
+.info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.meta { color: var(--muted); font-size: 0.85rem; }
+.amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+.row-actions { display: flex; gap: 6px; }
+
+.tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; background: #eef0f3; }
+.tag-food { background: #dcfce7; color: #166534; }
+.tag-transport { background: #dbeafe; color: #1e40af; }
+.tag-housing { background: #fef3c7; color: #92400e; }
+.tag-utilities { background: #e0e7ff; color: #3730a3; }
+.tag-health { background: #fce7f3; color: #9d174d; }
+.tag-entertainment { background: #f3e8ff; color: #6b21a8; }
+.tag-shopping { background: #ffedd5; color: #9a3412; }
+
+@media (max-width: 640px) {
+  .expense-form { grid-template-columns: 1fr 1fr; }
+  .expense-form input[placeholder^="What"], .expense-form input[placeholder^="Note"] { grid-column: 1 / -1; }
+  .expenses li { grid-template-columns: 1fr auto; }
+  .row-actions { grid-column: 1 / -1; }
+  .bars li { grid-template-columns: 90px 1fr 90px; }
+}
