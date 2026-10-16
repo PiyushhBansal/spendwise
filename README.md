@@ -1,6 +1,8 @@
 # SpendWise: DevSecOps Expense Tracker
 
-SpendWise is a personal expense tracker. You log what you spend, sort it into categories and see where the money goes. The app itself is deliberately small. The point of the project is everything around it: a full DevSecOps delivery pipeline from `git push` to a monitored Kubernetes deployment on AWS.
+SpendWise is a personal expense tracker. You log what you spend, sort it into categories and see where the money goes. The app itself is deliberately small. The point of the project is everything around it: a full DevSecOps delivery pipeline from `git push` to a monitored Kubernetes deployment.
+
+**Where it runs:** the platform runs on a local Kubernetes cluster (kind) that Terraform provisions (`terraform/local/`). The AWS version (VPC + EKS, in `terraform/`) is written and validated but has not been applied, because the AWS account is still waiting for AWS to activate it. Proof of every stage is in [Screenshots](#screenshots).
 
 | Layer | What it does |
 |---|---|
@@ -9,7 +11,7 @@ SpendWise is a personal expense tracker. You log what you spend, sort it into ca
 | **Containers** | Non-root images; multi-stage frontend build; one-command `docker compose` stack |
 | **CI/CD** | GitHub Actions: test, build, Trivy scan, push to GHCR (SHA tags), GitOps bump |
 | **Security** | Trivy fails the pipeline on fixable HIGH/CRITICAL CVEs |
-| **Infra** | Terraform: VPC (2 public + 2 private subnets), EKS with a managed node group |
+| **Infra** | Terraform: local kind platform (applied); AWS VPC (2 public + 2 private subnets) + EKS (written, validated) |
 | **Deploy** | Helm chart synced by ArgoCD; NGINX Ingress routes `/` to the frontend and `/api` to the backend |
 | **Observability** | `/metrics`, Prometheus ServiceMonitor, Grafana dashboard provisioned as code |
 
@@ -197,7 +199,37 @@ This shows why the gate exists: the vulnerable image was never pushed to the reg
 
 ---
 
-## Terraform infrastructure (AWS)
+## Terraform: local platform (current deployment)
+
+`terraform/local/` builds the whole platform on your machine with one `terraform apply`:
+
+| Resource | What it is |
+|---|---|
+| `kind_cluster.this` | Kubernetes 1.35 cluster in Docker; host ports 80/443 map to the ingress |
+| `helm_release.ingress_nginx` | NGINX Ingress controller |
+| `helm_release.metrics_server` | CPU metrics for the HPAs |
+| `helm_release.kube_prometheus_stack` | Prometheus Operator, Prometheus and Grafana (values from `monitoring/prometheus-values.yaml`) |
+| `helm_release.argocd` | ArgoCD, which then deploys the app from Git |
+
+```bash
+cd terraform/local
+terraform init
+terraform plan                 # Plan: 5 to add
+terraform apply
+kind export kubeconfig --name spendwise
+
+kubectl apply -f ../../k8s/namespace.yaml
+kubectl apply -f ../../argocd/application.yaml   # ArgoCD deploys helm/spendwise
+# open http://localhost
+
+terraform destroy              # removes the whole platform
+```
+
+Needs Docker Desktop with **at least 5 GB of memory** and Docker's built-in Kubernetes **turned off**.
+
+## Terraform: AWS target (VPC + EKS)
+
+> **Status:** written and `terraform validate` passes. **Not applied yet**: the AWS account is still waiting for AWS to activate it (every service returns `OptInRequired`). The commands below are what runs once it's active.
 
 The `terraform/` directory provisions the following in `ap-south-1` (configurable):
 
@@ -332,8 +364,74 @@ kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3001:80
 
 ---
 
+## Screenshots
+
+Every screenshot is in [`docs/screenshots/`](docs/screenshots). The terminal screenshots were taken in a real macOS Terminal window running the command shown.
+
+### M1 / M4 · Application and Docker Compose
+| `docker compose up --build`: images built, 3 containers healthy | App at `localhost:3000` |
+|---|---|
+| ![compose](docs/screenshots/04-compose-up.png) | ![app](docs/screenshots/01-app-browser.png) |
+
+### M2 · Tests
+![pytest](docs/screenshots/02-pytest.png)
+
+### M3 · Git history
+![commits](docs/screenshots/03-commits.png)
+
+### M5 · CI/CD
+Green run: [actions/runs/38855183165](https://github.com/PiyushhBansal/spendwise/actions/runs/38855183165)
+
+| Pipeline: test, build/scan/push, GitOps | GHCR images tagged with the commit SHA |
+|---|---|
+| ![pipeline](docs/screenshots/05-pipeline-green.png) | ![ghcr](docs/screenshots/06-ghcr-backend.png) |
+
+![ghcr frontend](docs/screenshots/06-ghcr-frontend.png)
+
+### M6 · Trivy
+The first run was blocked by 7 HIGH CVEs. After the fix, the scan is clean (see [DevSecOps: Trivy](#devsecops-trivy)).
+
+| Run #1: Trivy step failed, push skipped | The 7 HIGH findings from that run's log |
+|---|---|
+| ![trivy failed](docs/screenshots/07-trivy-failed.png) | ![trivy findings](docs/screenshots/07b-trivy-findings.png) |
+
+| Run #2: all green | Clean scan: `Total: 0 (HIGH: 0, CRITICAL: 0)` |
+|---|---|
+| ![trivy clean run](docs/screenshots/08-trivy-clean.png) | ![trivy clean](docs/screenshots/08b-trivy-clean.png) |
+
+### M7 · Terraform
+| `terraform plan`: 5 to add | Applied: state list, plan shows no changes |
+|---|---|
+| ![plan](docs/screenshots/10-terraform-plan.png) | ![state](docs/screenshots/10b-terraform-state.png) |
+
+AWS configuration validates:
+![validate](docs/screenshots/11-terraform-aws-validate.png)
+
+### M8 · Kubernetes and Helm
+| Pods: 2 backend, 2 frontend, Postgres, all Running | Services (ClusterIP), Ingress, HPAs |
+|---|---|
+| ![pods](docs/screenshots/13-kubectl-pods.png) | ![svc](docs/screenshots/14-kubectl-svc.png) |
+
+| `helm list -A` | App through the Ingress at `http://localhost` |
+|---|---|
+| ![helm](docs/screenshots/15-helm-list.png) | ![ingress](docs/screenshots/16-app-ingress.png) |
+
+ArgoCD: **Synced / Healthy**, tracking `main`:
+![argocd](docs/screenshots/17-argocd.png)
+
+### M9 · Observability
+`/metrics` output:
+![metrics](docs/screenshots/09-metrics.png)
+
+| Prometheus targets: `spendwise-backend` 2/2 **UP** | Grafana "SpendWise API" dashboard |
+|---|---|
+| ![prometheus](docs/screenshots/18-prometheus-targets.png) | ![grafana](docs/screenshots/19-grafana.png) |
+
+---
+
 ## Known issues and limitations
 
+- **AWS not applied yet.** The account is still waiting for AWS to activate it, so the VPC and EKS in `terraform/` haven't been created. The same Helm chart, ArgoCD application and monitoring stack run on the Terraform-provisioned local cluster instead.
 - **No authentication.** Expenses are global, not per user. Adding auth (e.g. OAuth2 + JWT) is the natural next step.
 - **Demo secrets in values files.** `postgres.password` and the Grafana admin password have demo defaults. Override them with `--set` or use External Secrets / Sealed Secrets in production.
 - **Single Postgres replica.** No HA or backups. Amazon RDS would be the production choice.
