@@ -4,7 +4,7 @@
 backend:
   image:
     repository: ghcr.io/piyushhbansal/spendwise-backend
-    tag: "72917eebaf89ecacb8d6658259cf2575f29207ee"
+    tag: "e2433bb1321b6f8462022d61f7d396fa3503c331"
   replicaCount: 2
   port: 8000
   resources:
@@ -14,7 +14,7 @@ backend:
 frontend:
   image:
     repository: ghcr.io/piyushhbansal/spendwise-frontend
-    tag: "72917eebaf89ecacb8d6658259cf2575f29207ee"
+    tag: "e2433bb1321b6f8462022d61f7d396fa3503c331"
   replicaCount: 2
   port: 8080
   resources:
