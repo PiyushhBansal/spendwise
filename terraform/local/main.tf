@@ -97,6 +97,10 @@ resource "helm_release" "kube_prometheus_stack" {
           resources = { requests = { cpu = "100m", memory = "256Mi" } }
         }
       }
+      # laptop-sized: the SpendWise dashboard only needs the app's own metrics
+      defaultRules     = { create = false }
+      nodeExporter     = { enabled = false }
+      kubeStateMetrics = { enabled = false }
     }),
   ]
 }
