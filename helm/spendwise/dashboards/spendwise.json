@@ -52,7 +52,7 @@
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2 }, "overrides": [] },
       "targets": [
         {
-          "expr": "100 * sum(rate(http_requests_total{status=\"5xx\"}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9)"
+          "expr": "(100 * sum(rate(http_requests_total{status=\"5xx\"}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9)) or vector(0)"
         }
       ]
     },
