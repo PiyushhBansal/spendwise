@@ -14,6 +14,7 @@ spec:
     helm:
       valueFiles:
         - values.yaml
+        - values-local.yaml # local kind cluster (terraform/local); drop this line on EKS
   destination:
     server: https://kubernetes.default.svc
     namespace: spendwise

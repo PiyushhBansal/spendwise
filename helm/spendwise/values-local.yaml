@@ -1,0 +1,16 @@
+# Overrides for the local kind cluster (terraform/local), layered on values.yaml
+postgres:
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: standard # kind's local-path provisioner
+
+backend:
+  resources:
+    requests: { cpu: 50m, memory: 96Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+frontend:
+  resources:
+    requests: { cpu: 20m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 96Mi }
