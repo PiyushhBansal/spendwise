@@ -186,7 +186,14 @@ Images are tagged only with the immutable commit SHA, never `latest`. Every runn
 
 Trivy scans each finished image. It checks the OS packages of the base image (Debian for the backend, Alpine for the frontend) and the application dependencies (Python wheels and the npm bundle) against vulnerability databases. `--ignore-unfixed` limits the gate to CVEs that have a fix available, so the build fails only on problems you can actually fix. The Dockerfiles run `apt-get upgrade` and `apk upgrade` to pull in patched OS packages, and both images use slim or Alpine bases to keep the attack surface small.
 
-> **Scan result:** _fill in after your first pipeline run, e.g. "Clean scan: 0 HIGH/CRITICAL fixable vulnerabilities in either image." Or explain one finding: CVE ID, affected package, severity, and how you fixed it (bumped the package or base image)._
+**Scan result: the gate caught real vulnerabilities.**
+- **Frontend:** the first pipeline run passed with 0 findings.
+- **Backend:** the first run failed with **7 HIGH** CVEs, all in Python packages. The Debian OS layer was clean.
+  - `starlette 0.41.3`, pulled in by FastAPI: three CVEs, among them **CVE-2025-62727**, a denial-of-service bug. Starlette merged overlapping HTTP `Range` headers inefficiently, so a single crafted request could pin the CPU. **Fixed** by upgrading to FastAPI 0.142.2 and Starlette 1.7.0.
+  - `urllib3` and `msgpack` (bundled inside pip) and `setuptools`: these are build tools, not runtime dependencies. **Fixed** by making the backend Dockerfile multi-stage. The runtime image no longer contains pip, setuptools or wheel.
+- **Result:** both images now scan clean (0 HIGH/CRITICAL), and the pipeline is green.
+
+This shows why the gate exists: the vulnerable image was never pushed to the registry.
 
 ---
 
